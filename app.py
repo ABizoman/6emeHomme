@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from dotenv import load_dotenv
+
 load_dotenv()
 
 #  launch wifi server with: flask run --host=0.0.0.0
@@ -13,13 +14,8 @@ load_dotenv()
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-# Flask setup
 app = Flask(__name__)
 
-# OpenAI client
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-# Your admin session cookie
 PHPSESSID = 'c4295b58af93d547d68f04adcfdc6350'
 BASE_URL = "https://admin.sixiemehomme.io"
 
@@ -65,6 +61,17 @@ def download_and_extract_pdf(pdf_url):
     return clean_text(text)
 
 # === Routes ===
+@app.route('/models')
+def models():
+    return jsonify([
+        {"id": "gpt-3.5-turbo", "label": "GPT-3.5 Turbo ($0.50/1K in, $1.50/1K out)"},
+        {"id": "gpt-3.5-turbo-16k", "label": "GPT-3.5 Turbo 16K ($1.00/1K in, $2.00/1K out)"},
+        {"id": "gpt-4o", "label": "GPT-4o ($5.00/1K in, $15.00/1K out)"},
+        {"id": "gpt-4o-mini", "label": "GPT-4o Mini ($1.00/1K in, $2.00/1K out)"},
+        {"id": "gpt-4-turbo", "label": "GPT-4 Turbo ($10.00/1K in, $30.00/1K out)"},
+        {"id": "gpt-4", "label": "GPT-4 ($30.00/1K in, $60.00/1K out)"}
+    ])
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -75,25 +82,21 @@ def evaluate():
     mission_url = data.get('mission_url', '').strip()
     candidate_url = data.get('candidate_url', '').strip()
     prompt_intro = data.get('prompt_intro', '').strip()
+    model = data.get('model', 'gpt-3.5-turbo').strip()
 
     if not mission_url or not candidate_url or not prompt_intro:
         return jsonify({"error": "Tous les champs sont requis."}), 400
 
     try:
-        # Get mission description
         mission_description = scrape_mission_description(mission_url)
-
-        # Get candidate CV link
         cv_pdf_link = get_cv_link_from_profile(candidate_url)
         if not cv_pdf_link:
             return jsonify({"error": "CV PDF introuvable pour ce candidat."})
 
-        # Download and extract CV text
         candidate_cv_text = download_and_extract_pdf(cv_pdf_link)
         if not candidate_cv_text:
             return jsonify({"error": "Impossible d'extraire le texte du CV."})
 
-        # Build the prompt
         final_prompt = f"""{prompt_intro}
 
 Réponds en JSON avec la structure suivante :
@@ -113,9 +116,8 @@ CV du candidat:
 {candidate_cv_text}
 """
 
-        # Call OpenAI
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[
                 {"role": "system", "content": "Tu es un assistant RH qui répond toujours en JSON valide."},
                 {"role": "user", "content": final_prompt}
@@ -130,4 +132,3 @@ CV du candidat:
 
 if __name__ == '__main__':
     app.run(debug=True)
-

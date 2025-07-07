@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Évaluateur RH Web</title>
+  <title>CV Scorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
   <div class="max-w-3xl w-full bg-white shadow-lg rounded-lg p-8 m-4">
-    <h1 class="text-3xl font-bold text-center mb-6 text-indigo-600">🧑‍💻 Évaluateur RH</h1>
+    <h1 class="text-3xl font-bold text-center mb-6 text-indigo-600">🧑‍💻 Scoreur CV</h1>
     
     <div class="mb-4">
       <label for="missionUrl" class="block text-sm font-medium text-gray-700 mb-1">🌐 URL de la mission</label>
@@ -20,6 +20,14 @@
       <label for="candidateUrl" class="block text-sm font-medium text-gray-700 mb-1">👤 URL du profil candidat</label>
       <input type="text" id="candidateUrl" placeholder="https://admin.sixiemehomme.io/..."
              class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+    </div>
+    
+    <div class="mb-4">
+      <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">💰 Modèle OpenAI</label>
+      <select id="modelSelect"
+              class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+        <option value="">Chargement des modèles...</option>
+      </select>
     </div>
     
     <div class="mb-6">
@@ -41,10 +49,26 @@ Tu es un assistant de recrutement. Donne une évaluation détaillée du candidat
   </div>
   
   <script>
+    async function loadModels() {
+      const select = document.getElementById('modelSelect');
+      try {
+        const res = await fetch('/models');
+        const models = await res.json();
+        select.innerHTML = '';
+        models.forEach(m => {
+          select.innerHTML += `<option value="${m.id}">${m.label}</option>`;
+        });
+      } catch {
+        select.innerHTML = '<option>Erreur de chargement des modèles</option>';
+      }
+    }
+    loadModels();
+
     async function runEvaluation() {
       const missionUrl = document.getElementById('missionUrl').value.trim();
       const candidateUrl = document.getElementById('candidateUrl').value.trim();
       const promptIntro = document.getElementById('promptIntro').value.trim();
+      const selectedModel = document.getElementById('modelSelect').value;
 
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = `
@@ -57,7 +81,12 @@ Tu es un assistant de recrutement. Donne une évaluation détaillée du candidat
         const response = await fetch('/evaluate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ mission_url: missionUrl, candidate_url: candidateUrl, prompt_intro: promptIntro })
+          body: JSON.stringify({
+            mission_url: missionUrl,
+            candidate_url: candidateUrl,
+            prompt_intro: promptIntro,
+            model: selectedModel
+          })
         });
         
         const data = await response.json();

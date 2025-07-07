@@ -25,12 +25,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 # === Model list with prices ===
 AVAILABLE_MODELS = [
+    {"id": "gpt-4.1-nano", "label": "GPT-4.1 nano (~$0.10/1M in, ~$0.40/1M out)"},
+    {"id": "gpt-4.1-mini", "label": "GPT-4.1 mini (~$0.40/1M in, ~$1.60/1M out)"},
     {"id": "gpt-3.5-turbo", "label": "GPT-3.5 Turbo (~$0.50/1K in, ~$1.50/1K out)"},
+     {"id": "gpt-4.1", "label": "GPT-4.1 (~$2.00/1M in, ~$8.00/1M out)"},
     {"id": "gpt-4o", "label": "GPT-4o (~$5/1K in, ~$15/1K out)"},
     {"id": "gpt-4", "label": "GPT-4 (~$10/1K in, ~$30/1K out)"},
-    {"id": "gpt-4.1", "label": "GPT-4.1 (~$2.00/1M in, ~$8.00/1M out)"},
-    {"id": "gpt-4.1-mini", "label": "GPT-4.1 mini (~$0.40/1M in, ~$1.60/1M out)"},
-    {"id": "gpt-4.1-nano", "label": "GPT-4.1 nano (~$0.10/1M in, ~$0.40/1M out)"}
 ]
 
 # === Helpers ===

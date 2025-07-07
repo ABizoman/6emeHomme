@@ -1,0 +1,6 @@
+Flask
+openai
+requests
+beautifulsoup4
+pdfplumber
+web: gunicorn app:app

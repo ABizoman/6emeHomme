@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CV Scorer</title>
+  <title>Évaluateur RH Web</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
@@ -23,10 +23,9 @@
     </div>
     
     <div class="mb-4">
-      <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">💰 Modèle OpenAI</label>
+      <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">🧠 Choisir le modèle</label>
       <select id="modelSelect"
               class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
-        <option value="">Chargement des modèles...</option>
       </select>
     </div>
     
@@ -49,20 +48,21 @@ Tu es un assistant de recrutement. Donne une évaluation détaillée du candidat
   </div>
   
   <script>
-    async function loadModels() {
-      const select = document.getElementById('modelSelect');
+    window.onload = async () => {
+      const modelSelect = document.getElementById('modelSelect');
       try {
         const res = await fetch('/models');
         const models = await res.json();
-        select.innerHTML = '';
         models.forEach(m => {
-          select.innerHTML += `<option value="${m.id}">${m.label}</option>`;
+          const option = document.createElement('option');
+          option.value = m.id;
+          option.textContent = m.label;
+          modelSelect.appendChild(option);
         });
-      } catch {
-        select.innerHTML = '<option>Erreur de chargement des modèles</option>';
+      } catch (err) {
+        modelSelect.innerHTML = '<option disabled>Erreur de chargement des modèles</option>';
       }
-    }
-    loadModels();
+    };
 
     async function runEvaluation() {
       const missionUrl = document.getElementById('missionUrl').value.trim();
@@ -81,12 +81,7 @@ Tu es un assistant de recrutement. Donne une évaluation détaillée du candidat
         const response = await fetch('/evaluate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            mission_url: missionUrl,
-            candidate_url: candidateUrl,
-            prompt_intro: promptIntro,
-            model: selectedModel
-          })
+          body: JSON.stringify({ mission_url: missionUrl, candidate_url: candidateUrl, prompt_intro: promptIntro, selected_model: selectedModel })
         });
         
         const data = await response.json();

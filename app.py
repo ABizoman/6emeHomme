@@ -9,18 +9,29 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#  launch wifi server with: flask run --host=0.0.0.0
+# launch wifi server with: flask run --host=0.0.0.0
 # launch local server with: python app.py
 
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 app = Flask(__name__)
 
+# Your admin session cookie
 PHPSESSID = 'c4295b58af93d547d68f04adcfdc6350'
 BASE_URL = "https://admin.sixiemehomme.io"
 
 COOKIES = {"PHPSESSID": PHPSESSID}
 HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+# === Model list with prices ===
+AVAILABLE_MODELS = [
+    {"id": "gpt-3.5-turbo", "label": "GPT-3.5 Turbo (~$0.50/1K in, ~$1.50/1K out)"},
+    {"id": "gpt-4o", "label": "GPT-4o (~$5/1K in, ~$15/1K out)"},
+    {"id": "gpt-4", "label": "GPT-4 (~$10/1K in, ~$30/1K out)"},
+    {"id": "gpt-4.1", "label": "GPT-4.1 (~$2.00/1M in, ~$8.00/1M out)"},
+    {"id": "gpt-4.1-mini", "label": "GPT-4.1 mini (~$0.40/1M in, ~$1.60/1M out)"},
+    {"id": "gpt-4.1-nano", "label": "GPT-4.1 nano (~$0.10/1M in, ~$0.40/1M out)"}
+]
 
 # === Helpers ===
 def clean_text(text):
@@ -63,14 +74,7 @@ def download_and_extract_pdf(pdf_url):
 # === Routes ===
 @app.route('/models')
 def models():
-    return jsonify([
-        {"id": "gpt-3.5-turbo", "label": "GPT-3.5 Turbo ($0.50/1K in, $1.50/1K out)"},
-        {"id": "gpt-3.5-turbo-16k", "label": "GPT-3.5 Turbo 16K ($1.00/1K in, $2.00/1K out)"},
-        {"id": "gpt-4o", "label": "GPT-4o ($5.00/1K in, $15.00/1K out)"},
-        {"id": "gpt-4o-mini", "label": "GPT-4o Mini ($1.00/1K in, $2.00/1K out)"},
-        {"id": "gpt-4-turbo", "label": "GPT-4 Turbo ($10.00/1K in, $30.00/1K out)"},
-        {"id": "gpt-4", "label": "GPT-4 ($30.00/1K in, $60.00/1K out)"}
-    ])
+    return jsonify(AVAILABLE_MODELS)
 
 @app.route('/')
 def index():
@@ -82,9 +86,9 @@ def evaluate():
     mission_url = data.get('mission_url', '').strip()
     candidate_url = data.get('candidate_url', '').strip()
     prompt_intro = data.get('prompt_intro', '').strip()
-    model = data.get('model', 'gpt-3.5-turbo').strip()
+    selected_model = data.get('selected_model', '').strip()
 
-    if not mission_url or not candidate_url or not prompt_intro:
+    if not mission_url or not candidate_url or not prompt_intro or not selected_model:
         return jsonify({"error": "Tous les champs sont requis."}), 400
 
     try:
@@ -117,7 +121,7 @@ CV du candidat:
 """
 
         response = client.chat.completions.create(
-            model=model,
+            model=selected_model,
             messages=[
                 {"role": "system", "content": "Tu es un assistant RH qui répond toujours en JSON valide."},
                 {"role": "user", "content": final_prompt}

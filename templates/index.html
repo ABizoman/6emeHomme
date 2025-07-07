@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Évaluateur RH Web</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="max-w-3xl w-full bg-white shadow-lg rounded-lg p-8 m-4">
+    <h1 class="text-3xl font-bold text-center mb-6 text-indigo-600">🧑‍💻 Évaluateur RH</h1>
+    
+    <div class="mb-4">
+      <label for="missionUrl" class="block text-sm font-medium text-gray-700 mb-1">🌐 URL de la mission</label>
+      <input type="text" id="missionUrl" placeholder="https://admin.sixiemehomme.io/..."
+             class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+    </div>
+    
+    <div class="mb-4">
+      <label for="candidateUrl" class="block text-sm font-medium text-gray-700 mb-1">👤 URL du profil candidat</label>
+      <input type="text" id="candidateUrl" placeholder="https://admin.sixiemehomme.io/..."
+             class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+    </div>
+    
+    <div class="mb-6">
+      <label for="promptIntro" class="block text-sm font-medium text-gray-700 mb-1">📝 Introduction du prompt</label>
+      <textarea id="promptIntro" rows="5"
+                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+Tu es un assistant de recrutement. Donne une évaluation détaillée du candidat par rapport au poste décrit.
+      </textarea>
+    </div>
+
+    <div class="flex justify-center">
+      <button onclick="runEvaluation()"
+              class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        🚀 Lancer l'évaluation
+      </button>
+    </div>
+    
+    <div id="result" class="mt-8 space-y-6"></div>
+  </div>
+  
+  <script>
+    async function runEvaluation() {
+      const missionUrl = document.getElementById('missionUrl').value.trim();
+      const candidateUrl = document.getElementById('candidateUrl').value.trim();
+      const promptIntro = document.getElementById('promptIntro').value.trim();
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <div class="flex items-center justify-center text-gray-600">
+          <span class="animate-spin mr-2">⏳</span> Traitement en cours...
+        </div>
+      `;
+      
+      try {
+        const response = await fetch('/evaluate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ mission_url: missionUrl, candidate_url: candidateUrl, prompt_intro: promptIntro })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          resultDiv.innerHTML = `<div class="text-red-600 font-semibold">❌ ${data.error}</div>`;
+          return;
+        }
+        
+        try {
+          const parsed = JSON.parse(data.result);
+          let html = `
+            <div class="bg-white border rounded-lg shadow p-4">
+              <h3 class="text-lg font-semibold text-indigo-600 mb-2">👤 ${parsed.nom}</h3>
+              <p><strong>Score:</strong> ${parsed.score}</p>
+              <p class="mt-2"><strong>Justification:</strong> ${parsed.justification}</p>
+              <div class="mt-2">
+                <strong>✅ Points positifs:</strong>
+                <ul class="list-disc list-inside ml-4">
+                  ${parsed.pros.map(p => `<li>${p}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="mt-2">
+                <strong>⚠️ Points négatifs:</strong>
+                <ul class="list-disc list-inside ml-4">
+                  ${parsed.cons.map(c => `<li>${c}</li>`).join('')}
+                </ul>
+              </div>
+            </div>`;
+          
+          resultDiv.innerHTML = html;
+        } catch {
+          resultDiv.innerHTML = `<pre class="bg-gray-100 p-4 rounded border">${data.result}</pre>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="text-red-600 font-semibold">❌ Erreur réseau ou serveur</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -8,6 +8,9 @@ from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
 
+#  launch wifi server with: flask run --host=0.0.0.0
+# launch local server with: python app.py
+
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 # Flask setup
